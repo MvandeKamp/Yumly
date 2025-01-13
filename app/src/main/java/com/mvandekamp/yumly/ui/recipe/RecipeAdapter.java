@@ -11,11 +11,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.Recipe;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder> {
 
-    private List<Recipe> recipes;
+    private List<Recipe> recipes = new ArrayList<>();
 
     public RecipeAdapter() {
     }
