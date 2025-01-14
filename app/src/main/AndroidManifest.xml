@@ -12,9 +12,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Yumly"
         tools:targetApi="31">
-        <activity android:name=".TaskAssignmentActivity" />
-        <activity android:name=".IngredientsActivity" />
-        <activity android:name=".RecipeActivity" />
         <activity
 
             android:name=".MainActivity"
