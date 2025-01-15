@@ -1,12 +1,19 @@
 package com.mvandekamp.yumly.ui.recipe;
 
 import android.app.AlertDialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -14,12 +21,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.mvandekamp.yumly.models.data.AppDatabase;
-import com.mvandekamp.yumly.models.CookingStep;
-import com.mvandekamp.yumly.models.data.DatabaseClient;
-import com.mvandekamp.yumly.models.Recipe;
 import com.mvandekamp.yumly.R;
+import com.mvandekamp.yumly.models.CookingStep;
+import com.mvandekamp.yumly.models.Recipe;
+import com.mvandekamp.yumly.models.data.AppDatabase;
+import com.mvandekamp.yumly.models.data.DatabaseClient;
+import com.mvandekamp.yumly.utils.ImageProcessor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +38,35 @@ public class RecipeFragment extends Fragment {
     private RecyclerView recipeRecyclerView;
     private RecipeAdapter recipeAdapter;
     private FloatingActionButton addRecipeFab;
+    private Button processImageButton;
+
+    // Launchers for handling image capture and selection
+    private final ActivityResultLauncher<Intent> captureImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
+                    Bitmap imageBitmap = (Bitmap) result.getData().getExtras().get("data");
+                    if (imageBitmap != null) {
+                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "What is in this image?");
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
+                    Uri imageUri = result.getData().getData();
+                    try {
+                        Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), imageUri);
+                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+    );
 
     @Nullable
     @Override
@@ -36,6 +74,7 @@ public class RecipeFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_recipe, container, false);
         AppDatabase db = DatabaseClient.getInstance(getContext()).getAppDatabase();
+
         // Initialize RecyclerView
         recipeRecyclerView = view.findViewById(R.id.recipeRecyclerView);
         recipeRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -50,6 +89,7 @@ public class RecipeFragment extends Fragment {
                 recipeAdapter.updateRecipes(recipes);
             });
         }).start();
+
 
         // Initialize FloatingActionButton
         addRecipeFab = view.findViewById(R.id.addRecipeFab);
@@ -92,7 +132,35 @@ public class RecipeFragment extends Fragment {
                     .show();
         });
 
+        // Add the new button for image processing
+        processImageButton = view.findViewById(R.id.processImageButton);
+        processImageButton.setOnClickListener(v -> {
+            // Show options to take a picture or choose from storage
+            showImageOptions();
+        });
+
         return view;
+    }
+
+    private void showImageOptions() {
+        // Show options to take a picture or choose from storage
+        String[] options = {"Take Picture", "Choose from Gallery"};
+        new android.app.AlertDialog.Builder(getContext())
+                .setTitle("Select Image")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // Take a picture
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        if (takePictureIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
+                            captureImageLauncher.launch(takePictureIntent);
+                        }
+                    } else if (which == 1) {
+                        // Choose from gallery
+                        Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                        pickImageLauncher.launch(pickPhotoIntent);
+                    }
+                })
+                .show();
     }
 
     // Helper method to parse steps
