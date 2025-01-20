@@ -28,4 +28,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Steps (comma-separated)" />
+
+    <EditText
+        android:id="@+id/recipeServingsEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Serving size"
+        android:inputType="number" />
 </LinearLayout>

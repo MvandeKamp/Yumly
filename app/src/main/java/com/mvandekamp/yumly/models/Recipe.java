@@ -13,6 +13,7 @@ public class Recipe {
     public String name;
     public String imageUri; // Path to the image
     public String description;
+    public int servings;
     public List<String> ingredients; // List of ingredients
     public List<CookingStep> steps; // List of cooking steps
 }

@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -116,11 +117,12 @@ public class ImageProcessor {
         recipeSchema.put("type", "object");
         recipeSchema.put("properties", new JSONObject()
                 .put("name", new JSONObject().put("type", "string"))
+                .put("servings", new JSONObject().put("type", "integer"))
                 .put("description", new JSONObject().put("type", "string"))
                 .put("ingredients", new JSONObject().put("type", "array").put("items", new JSONObject().put("type", "string")))
                 .put("steps", new JSONObject().put("type", "array").put("items", cookingStepSchema))
         );
-        recipeSchema.put("required", new JSONArray().put("name").put("description").put("ingredients").put("steps"));
+        recipeSchema.put("required", new JSONArray().put("name").put("servings").put("description").put("ingredients").put("steps"));
         recipeSchema.put("additionalProperties", false);
 
         // Define the response format
@@ -136,7 +138,12 @@ public class ImageProcessor {
     }
 
     private static void sendRequestToOpenAI(Context context, JSONObject requestBody) {
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS) // Set connection timeout
+                .readTimeout(30, TimeUnit.SECONDS)    // Set read timeout
+                .writeTimeout(30, TimeUnit.SECONDS)   // Set write timeout
+                .build();
+
         RequestBody body = RequestBody.create(requestBody.toString(), MediaType.parse("application/json; charset=utf-8"));
         Request request = new Request.Builder()
                 .url(OPENAI_API_URL)

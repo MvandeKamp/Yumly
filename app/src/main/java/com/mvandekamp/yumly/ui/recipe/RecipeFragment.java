@@ -37,7 +37,7 @@ public class RecipeFragment extends Fragment {
 
     private RecyclerView recipeRecyclerView;
     private RecipeAdapter recipeAdapter;
-    private FloatingActionButton addRecipeFab;
+    private Button addRecipeFab;
     private Button processImageButton;
 
     // Launchers for handling image capture and selection
@@ -60,7 +60,7 @@ public class RecipeFragment extends Fragment {
                     Uri imageUri = result.getData().getData();
                     try {
                         Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), imageUri);
-                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units");
+                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units. If no servings provided make a guess bust just a number!");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -85,9 +85,11 @@ public class RecipeFragment extends Fragment {
 
         new Thread(() -> {
             List<Recipe> recipes = db.recipeDao().getAllRecipes();
-            requireActivity().runOnUiThread(() -> {
-                recipeAdapter.updateRecipes(recipes);
-            });
+            if(recipes != null){
+                requireActivity().runOnUiThread(() -> {
+                    recipeAdapter.updateRecipes(recipes);
+                });
+            }
         }).start();
 
 
@@ -103,6 +105,7 @@ public class RecipeFragment extends Fragment {
             EditText recipeDescriptionEditText = dialogView.findViewById(R.id.recipeDescriptionEditText);
             EditText recipeIngredientsEditText = dialogView.findViewById(R.id.recipeIngredientsEditText);
             EditText recipeStepsEditText = dialogView.findViewById(R.id.recipeStepsEditText);
+            EditText recipeServingsEditText = dialogView.findViewById(R.id.recipeServingsEditText);
 
             // Create and show the dialog
             new AlertDialog.Builder(getContext())
@@ -114,6 +117,7 @@ public class RecipeFragment extends Fragment {
                         String description = recipeDescriptionEditText.getText().toString();
                         String ingredients = recipeIngredientsEditText.getText().toString();
                         String steps = recipeStepsEditText.getText().toString();
+                        int servings = Integer.parseInt(recipeServingsEditText.getText().toString());
 
                         // Create a new Recipe object
                         Recipe newRecipe = new Recipe();
@@ -121,6 +125,7 @@ public class RecipeFragment extends Fragment {
                         newRecipe.description = description;
                         newRecipe.ingredients = Arrays.asList(ingredients.split(","));
                         newRecipe.steps = parseSteps(steps);
+                        newRecipe.servings = servings;
 
                         // Add the recipe to the list and update the RecyclerView
                         recipeAdapter.addRecipe(newRecipe);

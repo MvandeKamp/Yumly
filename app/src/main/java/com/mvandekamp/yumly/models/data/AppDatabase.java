@@ -9,7 +9,7 @@ import com.mvandekamp.yumly.models.Inventory;
 import com.mvandekamp.yumly.models.Recipe;
 import com.mvandekamp.yumly.utils.Converters;
 
-@Database(entities = {Recipe.class, CookingGroup.class, Inventory.class}, version = 1)
+@Database(entities = {Recipe.class, CookingGroup.class, Inventory.class}, version = 2)
 @TypeConverters({Converters.class}) // Add this line
 public abstract class AppDatabase extends RoomDatabase {
     public abstract RecipeDao recipeDao();
