@@ -16,4 +16,10 @@
         android:name="com.mvandekamp.yumly.ui.recipe.RecipeFragment"
         android:label="@string/title_recipe"
         tools:layout="@layout/fragment_recipe" />
+
+    <fragment
+        android:id="@+id/navigation_inventory"
+        android:name="com.mvandekamp.yumly.ui.inventory.InventoryFragment"
+        android:label="Inventory"
+        tools:layout="@layout/fragment_inventory" />
 </navigation>

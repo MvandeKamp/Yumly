@@ -4,4 +4,11 @@ public class InventoryItem {
     public String name;
     public String estimatedExpirationDate; // e.g., "2025-01-10"
     public String estimatedQuantity;
+
+    // Constructor
+    public InventoryItem(String name, String estimatedExpirationDate, String estimatedQuantity) {
+        this.name = name;
+        this.estimatedExpirationDate = estimatedExpirationDate;
+        this.estimatedQuantity = estimatedQuantity;
+    }
 }
