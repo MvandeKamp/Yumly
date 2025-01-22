@@ -1,6 +1,7 @@
 package com.mvandekamp.yumly.ui.recipe;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -83,6 +84,7 @@ public class RecipeFragment extends Fragment {
         recipeAdapter = new RecipeAdapter();
         recipeRecyclerView.setAdapter(recipeAdapter);
 
+        recipeAdapter.setOnRecipeClickListener(this::openRecipeEditor);
         new Thread(() -> {
             List<Recipe> recipes = db.recipeDao().getAllRecipes();
             if(recipes != null){
@@ -130,7 +132,9 @@ public class RecipeFragment extends Fragment {
                         // Add the recipe to the list and update the RecyclerView
                         recipeAdapter.addRecipe(newRecipe);
                         new Thread(() -> {
-                            db.recipeDao().insert(newRecipe);
+                            requireActivity().runOnUiThread(() -> {
+                                db.recipeDao().insert(newRecipe);
+                            });
                         }).start();
                     })
                     .setNegativeButton("Cancel", null)
@@ -145,6 +149,63 @@ public class RecipeFragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void openRecipeEditor(Recipe recipe, int position) {
+        // Create a custom dialog
+        Dialog dialog = new Dialog(requireContext(), android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
+
+        // Inflate the editor layout
+        View editorView = LayoutInflater.from(getContext()).inflate(R.layout.editor_recipe, null);
+
+        // Initialize editor views
+        EditText recipeNameInput = editorView.findViewById(R.id.recipeNameInput);
+        EditText recipeDescriptionInput = editorView.findViewById(R.id.recipeDescriptionInput);
+        EditText recipeServingsInput = editorView.findViewById(R.id.recipeServingsInput);
+        RecyclerView ingredientsRecyclerView = editorView.findViewById(R.id.ingredientsRecyclerView);
+        RecyclerView stepsRecyclerView = editorView.findViewById(R.id.stepsRecyclerView);
+
+        // Pre-fill the fields with the recipe data
+        recipeNameInput.setText(recipe.name);
+        recipeDescriptionInput.setText(recipe.description);
+        recipeServingsInput.setText(String.valueOf(recipe.servings));
+
+        // Set up ingredients RecyclerView
+        IngredientAdapter ingredientAdapter = new IngredientAdapter(recipe.ingredients);
+        ingredientsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        ingredientsRecyclerView.setAdapter(ingredientAdapter);
+
+        // Set up steps RecyclerView
+        StepAdapter stepAdapter = new StepAdapter(recipe.steps);
+        stepsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        stepsRecyclerView.setAdapter(stepAdapter);
+
+        // Set the custom view for the dialog
+        dialog.setContentView(editorView);
+
+        // Set up Save and Cancel buttons
+        Button saveButton = editorView.findViewById(R.id.saveButton);
+        Button cancelButton = editorView.findViewById(R.id.cancelButton);
+
+        saveButton.setOnClickListener(v -> {
+            // Save changes to the recipe
+            recipe.name = recipeNameInput.getText().toString();
+            recipe.description = recipeDescriptionInput.getText().toString();
+            recipe.servings = Integer.parseInt(recipeServingsInput.getText().toString());
+
+            new Thread(() -> {
+                AppDatabase db = DatabaseClient.getInstance(getContext()).getAppDatabase();
+                db.recipeDao().update(recipe);
+            }).start();
+
+            recipeAdapter.notifyItemChanged(position);
+            dialog.dismiss();
+        });
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        // Show the dialog
+        dialog.show();
     }
 
     private void showImageOptions() {

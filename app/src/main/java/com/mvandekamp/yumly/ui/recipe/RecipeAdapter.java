@@ -40,6 +40,24 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         // Bind recipe data to the views
         holder.recipeNameTextView.setText(recipe.name);
         holder.recipeDescriptionTextView.setText(recipe.description);
+
+        // Handle item click to open the editor
+        holder.itemView.setOnClickListener(v -> {
+            if (onRecipeClickListener != null) {
+                onRecipeClickListener.onRecipeClick(recipe, position);
+            }
+        });
+    }
+
+    // Add an interface for handling recipe clicks
+    public interface OnRecipeClickListener {
+        void onRecipeClick(Recipe recipe, int position);
+    }
+
+    private OnRecipeClickListener onRecipeClickListener;
+
+    public void setOnRecipeClickListener(OnRecipeClickListener listener) {
+        this.onRecipeClickListener = listener;
     }
 
     @Override

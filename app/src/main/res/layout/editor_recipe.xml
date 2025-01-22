@@ -57,19 +57,13 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
-            <ScrollView
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/ingredientsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="160dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:scrollbars="vertical" />
 
-                <LinearLayout
-                    android:id="@+id/ingredientsContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <!-- Dynamically add clickable ingredient items here -->
-                </LinearLayout>
-            </ScrollView>
 
             <!-- Steps Section -->
             <TextView
@@ -80,19 +74,13 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
-            <ScrollView
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/stepsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="165dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:scrollbars="vertical" />
 
-                <LinearLayout
-                    android:id="@+id/stepsContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <!-- Dynamically add clickable cooking step items here -->
-                </LinearLayout>
-            </ScrollView>
 
             <!-- Buttons -->
             <LinearLayout

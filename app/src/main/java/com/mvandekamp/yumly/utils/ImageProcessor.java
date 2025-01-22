@@ -139,9 +139,9 @@ public class ImageProcessor {
 
     private static void sendRequestToOpenAI(Context context, JSONObject requestBody) {
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS) // Set connection timeout
-                .readTimeout(30, TimeUnit.SECONDS)    // Set read timeout
-                .writeTimeout(30, TimeUnit.SECONDS)   // Set write timeout
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .build();
 
         RequestBody body = RequestBody.create(requestBody.toString(), MediaType.parse("application/json; charset=utf-8"));

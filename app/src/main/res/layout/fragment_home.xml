@@ -8,21 +8,6 @@
     android:background="@drawable/gradient_background"
     tools:context=".ui.home.HomeFragment">
 
-    <!-- Custom Toolbar -->
-    <android.widget.Toolbar
-        android:id="@+id/customToolbar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/toolbar_gradient_background"
-        android:elevation="4dp"
-        android:padding="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:title="Home"
-        app:titleTextAppearance="@style/CustomToolbarTitle"
-        app:titleTextColor="@android:color/white" />
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
