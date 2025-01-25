@@ -11,6 +11,6 @@ public class Inventory {
     public int id;
     public String owner;
     public String name;
-    public List<InventoryItem> items; // List of inventory items
+    public List<Ingridient> ingridients; // List of inventory items
 }
 

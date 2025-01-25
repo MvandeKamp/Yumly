@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Task {
     public int number;
+    public int recipeId;
     public String type; // "Einkaufen", "Vorbereiten", etc.
     public String assignedTo; // Member name
     public String description; // For "Vorbereiten", "Servieren", "Custom"

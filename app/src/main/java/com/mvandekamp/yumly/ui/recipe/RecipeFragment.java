@@ -48,7 +48,11 @@ public class RecipeFragment extends Fragment {
                 if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
                     Bitmap imageBitmap = (Bitmap) result.getData().getExtras().get("data");
                     if (imageBitmap != null) {
-                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "What is in this image?");
+                        ImageProcessor.sendImageToOpenAI(
+                                getContext(),
+                                imageBitmap,
+                                "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units. If no servings provided make a guess bust just a number!",
+                                "recipe");
                     }
                 }
             }
@@ -61,7 +65,11 @@ public class RecipeFragment extends Fragment {
                     Uri imageUri = result.getData().getData();
                     try {
                         Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), imageUri);
-                        ImageProcessor.sendImageToOpenAI(getContext(), imageBitmap, "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units. If no servings provided make a guess bust just a number!");
+                        ImageProcessor.sendImageToOpenAI(
+                                getContext(),
+                                imageBitmap,
+                                "Extract the recipe information from the provided image to the provided output format. Extract the ingridents to Metric units. If no servings provided make a guess bust just a number!",
+                                "recipe");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

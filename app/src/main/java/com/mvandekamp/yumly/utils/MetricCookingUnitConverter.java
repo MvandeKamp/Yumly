@@ -40,18 +40,22 @@ public class MetricCookingUnitConverter {
 
     // Method to parse input and extract ingredient, amount, and unit
     public static Ingridient parseIngredient(String input) {
-        // Regex to match patterns like "30ml Milk", "Milk 30 milliliters", or "2 eggs"
-        String regex = "(?i)(\\d+(\\.\\d+)?)(\\s*ml|\\s*milliliters|\\s*l|\\s*liters|\\s*g|\\s*grams|\\s*kg|\\s*kilograms|\\s*tsp|\\s*teaspoons|\\s*tbsp|\\s*tablespoons)?\\s*(.+)|(.+)\\s*(\\d+(\\.\\d+)?)(\\s*ml|\\s*milliliters|\\s*l|\\s*liters|\\s*g|\\s*grams|\\s*kg|\\s*kilograms|\\s*tsp|\\s*teaspoons|\\s*tbsp|\\s*tablespoons)?";
+        // Updated regex to include singular and plural forms of units
+        String regex = "(?i)(\\d+(\\.\\d+)?)(\\s*ml|\\s*milliliters|\\s*l|\\s*liters|\\s*g|\\s*grams|\\s*kg|\\s*kilograms|\\s*tsp|\\s*teaspoons|\\s*tbsp|\\s*tablespoons|\\s*unit|\\s*units)?\\s*(.+)|(.+)\\s*(\\d+(\\.\\d+)?)(\\s*ml|\\s*milliliters|\\s*l|\\s*liters|\\s*g|\\s*grams|\\s*kg|\\s*kilograms|\\s*tsp|\\s*teaspoons|\\s*tbsp|\\s*tablespoons|\\s*unit|\\s*units)?";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
 
         if (matcher.matches()) {
+            // Extract amount, unit, and name
             String amountStr = matcher.group(1) != null ? matcher.group(1) : matcher.group(6);
             String unitStr = matcher.group(3) != null ? matcher.group(3).trim() : matcher.group(8) != null ? matcher.group(8).trim() : null;
             String name = matcher.group(4) != null ? matcher.group(4).trim() : matcher.group(5).trim();
 
+            // Parse amount
             double amount = Double.parseDouble(amountStr);
-            MetricUnit unit = unitStr != null ? standardizeUnit(unitStr) : MetricUnit.UNIT; // Default to UNIT if no unit is found
+
+            // Standardize unit or default to UNIT
+            MetricUnit unit = unitStr != null ? standardizeUnit(unitStr) : MetricUnit.UNIT;
 
             return new Ingridient(name, amount, unit);
         } else {
@@ -82,7 +86,7 @@ public class MetricCookingUnitConverter {
             case "tablespoons":
                 return MetricUnit.TABLESPOONS;
             default:
-                throw new IllegalArgumentException("Unknown unit: " + unit);
+                return MetricUnit.UNIT;
         }
     }
 

@@ -55,7 +55,8 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/card_background"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="16dp"
+                tools:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"

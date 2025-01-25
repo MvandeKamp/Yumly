@@ -3,16 +3,18 @@ package com.mvandekamp.yumly.models;
 import com.mvandekamp.yumly.utils.MetricCookingUnitConverter;
 
 public class Ingridient {
-    private final String name;
-    private final double amount;
-    private final MetricCookingUnitConverter.MetricUnit unit;
+    public String name;
+    public double amount;
+    public MetricCookingUnitConverter.MetricUnit unit;
+    public String Price;
     public String estimatedExpirationDate;
 
-    public Ingridient(String name, double amount, MetricCookingUnitConverter.MetricUnit unit, String estimatedExpirationDate) {
+    public Ingridient(String name, double amount, MetricCookingUnitConverter.MetricUnit unit, String estimatedExpirationDate, String price) {
         this.name = name;
         this.amount = amount;
         this.unit = unit;
         this.estimatedExpirationDate = estimatedExpirationDate;
+        this.Price = price;
     }
 
     public Ingridient(String name, double amount, MetricCookingUnitConverter.MetricUnit unit) {
@@ -20,7 +22,9 @@ public class Ingridient {
         this.amount = amount;
         this.unit = unit;
         this.estimatedExpirationDate = null;
+        this.Price = "";
     }
+
 
     public String getName() {
         return name;

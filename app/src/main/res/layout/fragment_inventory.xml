@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/inventoryFragment"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -18,38 +19,51 @@
         app:layout_constraintBottom_toTopOf="@id/bottomButtons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/clearInventoryButton"
         tools:listitem="@layout/item_inventory" />
 
-    <!-- Bottom buttons -->
+    <!-- Button Container -->
     <LinearLayout
         android:id="@+id/bottomButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:gravity="center"
         android:orientation="horizontal"
-        android:padding="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Cancel Button -->
         <Button
-            android:id="@+id/scanImageButton"
+            android:id="@+id/processImageButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/purple_500"
+            android:backgroundTint="@color/bottom_nav_icon_color"
             android:text="Scan Image"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconPadding="0dp"
+            app:iconTint="@color/white"
+            app:iconTintMode="multiply" />
 
+        <!-- Save Button -->
         <Button
-            android:id="@+id/addRecipeButton"
+            android:id="@+id/addIngredientFab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/purple_500"
-            android:text="Add Item"
+            android:backgroundTint="@color/bottom_nav_icon_color"
+            android:contentDescription="@string/add_ingredient"
+            android:src="@drawable/ic_add"
+            android:text="Add New"
             android:textColor="@android:color/white" />
+
     </LinearLayout>
+
     <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
@@ -60,4 +74,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:menu="@menu/bottom_nav_menu"
         tools:visibility="invisible" />
+
+    <Button
+        android:id="@+id/clearInventoryButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_margin="8dp"
+        android:backgroundTint="@android:color/holo_red_dark"
+        android:text="Clear Inventory"
+        android:textColor="@android:color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

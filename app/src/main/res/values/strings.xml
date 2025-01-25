@@ -5,4 +5,5 @@
     <string name="add_recipe">Create new Recipe</string>
     <string name="add_group">Add group</string>
     <string name="home_tasks">Tasks</string>
+    <string name="add_ingredient">Add new</string>
 </resources>

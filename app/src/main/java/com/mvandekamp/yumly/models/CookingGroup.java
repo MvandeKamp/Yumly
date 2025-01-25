@@ -13,7 +13,7 @@ public class CookingGroup {
     public String description;
     public List<String> members; // List of member names
     public int linkedInventoryId; // Foreign key to Inventory
-    public List<Integer> selectedRecipeIds; // Foreign keys to Recipe
+    public List<RecipeState> selectedRecipes; // Foreign keys to Recipe
     public List<Task> tasks; // List of tasks
 }
 

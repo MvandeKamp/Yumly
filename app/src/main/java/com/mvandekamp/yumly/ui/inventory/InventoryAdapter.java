@@ -8,15 +8,32 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.mvandekamp.yumly.R;
-import com.mvandekamp.yumly.models.InventoryItem;
+import com.mvandekamp.yumly.models.Ingridient;
+import com.mvandekamp.yumly.models.Recipe;
+
 import java.util.List;
 
 public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.InventoryViewHolder> {
 
-    private final List<InventoryItem> inventoryItems;
+    private List<Ingridient> ingridients;
+    private OnIngredientClickListener onIngredientClickListener;
 
-    public InventoryAdapter(List<InventoryItem> inventoryItems) {
-        this.inventoryItems = inventoryItems;
+    public InventoryAdapter(List<Ingridient> ingridients) {
+        this.ingridients = ingridients;
+    }
+
+    public void updateIngredients(List<Ingridient> ingridient) {
+        ingridients.clear();
+        ingridients.addAll(ingridient);
+        notifyDataSetChanged();
+    }
+
+    public interface OnIngredientClickListener {
+        void onIngredientClick(Ingridient ingredient, int position);
+    }
+
+    public void setOnIngredientClickListener(OnIngredientClickListener listener) {
+        this.onIngredientClickListener = listener;
     }
 
     @NonNull
@@ -29,18 +46,25 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     @Override
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
-        InventoryItem item = inventoryItems.get(position);
-        holder.itemName.setText(item.name);
-        holder.itemExpirationDate.setText("Expiration Date: " + item.estimatedExpirationDate);
-        holder.itemQuantity.setText("Quantity: " + item.estimatedQuantity);
+        Ingridient ingridient = ingridients.get(position);
+        holder.itemName.setText(ingridient.toString());
+        holder.itemExpirationDate.setText("Expiration Date: " + (ingridient.estimatedExpirationDate != null ? ingridient.estimatedExpirationDate : "N/A"));
+        holder.itemQuantity.setText(String.format("Quantity: %.2f %s", ingridient.getAmount(), ingridient.getUnit().getUnit()));
 
-        // Placeholder for image 
+        // Placeholder for image
         holder.itemImage.setImageResource(android.R.drawable.ic_menu_report_image);
+
+        // Handle item click
+        holder.itemView.setOnClickListener(v -> {
+            if (onIngredientClickListener != null) {
+                onIngredientClickListener.onIngredientClick(ingridient, position);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return inventoryItems.size();
+        return ingridients.size();
     }
 
     static class InventoryViewHolder extends RecyclerView.ViewHolder {
