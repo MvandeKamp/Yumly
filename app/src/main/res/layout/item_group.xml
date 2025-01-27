@@ -23,7 +23,73 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Short description of the group"
-            android:textAppearance="?attr/textAppearanceBody2" />
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:layout_marginLeft="4dp"
+            android:layout_margin="4dp"/>
 
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Recipes"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="#333"
+            android:textSize="18sp"
+            android:textStyle="bold">
+        </TextView>
+
+        <ProgressBar
+            android:id="@+id/groupRecipeProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:layout_margin="4dp"
+            android:max="10"
+            android:progress="8"
+            android:progressBackgroundTint="#E0E0E0"
+            android:progressTint="#8E44AD" />
+
+        <TextView
+            android:id="@+id/groupRecipeProgressBarTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:text="8/10"
+            android:textColor="#555"
+            android:textSize="16sp" />
+
+        <!-- Next Planned Recipe -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/card_background"
+            android:orientation="vertical"
+            android:layout_marginTop="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Next Planned Recipe"
+                android:textColor="#333"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/groupNextPlannedRecipeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Spaghetti Carbonara"
+                android:textColor="#555"
+                android:textSize="16sp"
+                android:layout_marginLeft="4dp"
+                android:layout_margin="4dp"/>
+        </LinearLayout>
     </LinearLayout>
+
+
 </androidx.cardview.widget.CardView>
