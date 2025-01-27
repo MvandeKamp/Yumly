@@ -1,5 +1,6 @@
 package com.mvandekamp.yumly.models.data;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -22,8 +23,11 @@ public interface InventoryDao {
     void delete(Inventory inventory);
 
     @Query("SELECT * FROM Inventory WHERE id = :id")
-    Inventory getInventoryById(int id);
+    LiveData<Inventory> getInventoryById(int id);
 
     @Query("SELECT * FROM Inventory")
-    List<Inventory> getAllInventories();
+    LiveData<List<Inventory>> getAllInventories();
+
+    @Query("SELECT * FROM Inventory")
+    List<Inventory> getAllInventoriesSync();
 }

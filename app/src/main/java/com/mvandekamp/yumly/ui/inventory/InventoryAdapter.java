@@ -47,7 +47,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     @Override
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
         Ingridient ingridient = ingridients.get(position);
-        holder.itemName.setText(ingridient.toString());
+        holder.itemName.setText(ingridient.name);
         holder.itemExpirationDate.setText("Expiration Date: " + (ingridient.estimatedExpirationDate != null ? ingridient.estimatedExpirationDate : "N/A"));
         holder.itemQuantity.setText(String.format("Quantity: %.2f %s", ingridient.getAmount(), ingridient.getUnit().getUnit()));
 

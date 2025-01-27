@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigation_home"
@@ -8,9 +7,13 @@
         android:id="@+id/navigation_recipes"
         android:icon="@drawable/ic_recipe"
         android:title="Recipes" />
-
     <item
         android:id="@+id/navigation_inventory"
         android:icon="@drawable/ic_recipe"
         android:title="Inventory" />
+    <!-- Add the new menu item for Group -->
+    <item
+        android:id="@+id/navigation_group"
+        android:icon="@drawable/ic_recipe"
+        android:title="Group" />
 </menu>

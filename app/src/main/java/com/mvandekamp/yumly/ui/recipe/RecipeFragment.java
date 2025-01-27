@@ -93,14 +93,9 @@ public class RecipeFragment extends Fragment {
         recipeRecyclerView.setAdapter(recipeAdapter);
 
         recipeAdapter.setOnRecipeClickListener(this::openRecipeEditor);
-        new Thread(() -> {
-            List<Recipe> recipes = db.recipeDao().getAllRecipes();
-            if(recipes != null){
-                requireActivity().runOnUiThread(() -> {
-                    recipeAdapter.updateRecipes(recipes);
-                });
-            }
-        }).start();
+        db.recipeDao().getAllRecipes().observe(getViewLifecycleOwner(), recipes -> {
+            recipeAdapter.updateRecipes(recipes);
+        });
 
 
         // Initialize FloatingActionButton

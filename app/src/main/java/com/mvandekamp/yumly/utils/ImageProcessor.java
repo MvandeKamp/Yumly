@@ -8,9 +8,14 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.mvandekamp.yumly.MainActivity;
+import com.mvandekamp.yumly.R;
+import com.mvandekamp.yumly.models.Ingridient;
+import com.mvandekamp.yumly.models.Inventory;
 import com.mvandekamp.yumly.models.Recipe;
 import com.mvandekamp.yumly.models.data.AppDatabase;
 import com.mvandekamp.yumly.models.data.DatabaseClient;
+import com.mvandekamp.yumly.ui.inventory.InventoryFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +23,8 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -40,26 +47,26 @@ public class ImageProcessor {
      * @param prompt    The text prompt to send along with the image.
      */
 
-    public static void sendImageToOpenAI(Context context, Bitmap imageBitmap, String prompt) {
+    public static void sendImageToOpenAI(Context context, Bitmap imageBitmap, String prompt, String formatType) {
         try {
             // Prepare the request payload
-            JSONObject requestBody = createRequestPayload(imageBitmap, prompt);
+            JSONObject requestBody = createRequestPayload(imageBitmap, prompt, formatType);
 
             // Send the request
-            sendRequestToOpenAI(context, requestBody);
+            sendRequestToOpenAI(context, requestBody, formatType);
         } catch (Exception e) {
             e.printStackTrace();
             showToast(context, "Error creating request payload.");
         }
     }
 
-    private static JSONObject createRequestPayload(Bitmap imageBitmap, String prompt) throws JSONException {
+    private static JSONObject createRequestPayload(Bitmap imageBitmap, String prompt, String formatType) throws JSONException {
         String base64Image = bitmapToBase64(imageBitmap);
 
         // Create content array
         JSONArray contentArray = new JSONArray();
-        contentArray.put(createTextContent(prompt));
-        contentArray.put(createImageContent(base64Image));
+        contentArray.put(RequestPayloadFactory.createTextContent(prompt));
+        contentArray.put(RequestPayloadFactory.createImageContent(base64Image));
 
         // Create user message
         JSONObject userMessage = new JSONObject();
@@ -70,74 +77,20 @@ public class ImageProcessor {
         JSONArray messagesArray = new JSONArray();
         messagesArray.put(userMessage);
 
-        // Create response format
-        JSONObject responseFormat = createResponseFormat();
+        // Use RequestPayloadFactory to get the response format
+        JSONObject responseFormat = RequestPayloadFactory.createResponseFormat(formatType);
 
         // Build the final request body
         JSONObject requestBody = new JSONObject();
         requestBody.put("model", "gpt-4o-mini");
         requestBody.put("messages", messagesArray);
         requestBody.put("response_format", responseFormat);
-        requestBody.put("max_tokens", 300);
+        requestBody.put("max_tokens", 2048);
 
         return requestBody;
     }
 
-    private static JSONObject createTextContent(String prompt) throws JSONException {
-        JSONObject textContent = new JSONObject();
-        textContent.put("type", "text");
-        textContent.put("text", prompt);
-        return textContent;
-    }
-
-    private static JSONObject createImageContent(String base64Image) throws JSONException {
-        JSONObject imageContent = new JSONObject();
-        imageContent.put("type", "image_url");
-
-        JSONObject imageUrlObject = new JSONObject();
-        imageUrlObject.put("url", "data:image/jpeg;base64," + base64Image);
-
-        imageContent.put("image_url", imageUrlObject);
-        return imageContent;
-    }
-
-    private static JSONObject createResponseFormat() throws JSONException {
-        // Define the cooking step schema
-        JSONObject cookingStepSchema = new JSONObject();
-        cookingStepSchema.put("type", "object");
-        cookingStepSchema.put("properties", new JSONObject()
-                .put("description", new JSONObject().put("type", "string"))
-                .put("stepNumber", new JSONObject().put("type", "integer"))
-        );
-        cookingStepSchema.put("required", new JSONArray().put("description").put("stepNumber"));
-        cookingStepSchema.put("additionalProperties", false);
-
-        // Define the recipe schema
-        JSONObject recipeSchema = new JSONObject();
-        recipeSchema.put("type", "object");
-        recipeSchema.put("properties", new JSONObject()
-                .put("name", new JSONObject().put("type", "string"))
-                .put("servings", new JSONObject().put("type", "integer"))
-                .put("description", new JSONObject().put("type", "string"))
-                .put("ingredients", new JSONObject().put("type", "array").put("items", new JSONObject().put("type", "string")))
-                .put("steps", new JSONObject().put("type", "array").put("items", cookingStepSchema))
-        );
-        recipeSchema.put("required", new JSONArray().put("name").put("servings").put("description").put("ingredients").put("steps"));
-        recipeSchema.put("additionalProperties", false);
-
-        // Define the response format
-        JSONObject responseFormat = new JSONObject();
-        responseFormat.put("type", "json_schema");
-        responseFormat.put("json_schema", new JSONObject()
-                .put("name", "recipe")
-                .put("schema", recipeSchema)
-                .put("strict", true)
-        );
-
-        return responseFormat;
-    }
-
-    private static void sendRequestToOpenAI(Context context, JSONObject requestBody) {
+    private static void sendRequestToOpenAI(Context context, JSONObject requestBody, String formatType) {
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -160,51 +113,184 @@ public class ImageProcessor {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                handleResponse(context, response);
+                handleResponse(context, response, formatType);
             }
         });
     }
 
-    private static void handleResponse(Context context, Response response) throws IOException {
-        if (response.isSuccessful()) {
-            try {
-                String responseData = response.body().string();
-                JSONObject jsonResponse = new JSONObject(responseData);
-                JSONArray choices = jsonResponse.getJSONArray("choices");
+    private static void handleResponse(Context context, Response response, String formatType) throws IOException {
+        String contentString = extractContentString(context, response);
+        if (contentString == null) {
+            // If the content string is null, an error occurred, and we already handled it in the helper method.
+            return;
+        }
 
-                if (choices.length() > 0) {
-                    JSONObject choice = choices.getJSONObject(0);
-
-                    if (choice.has("message")) {
-                        JSONObject message = choice.getJSONObject("message");
-                        String contentString = message.getString("content");
-
-                        try {
-                            // Parse the content string into the Recipe class
-                            Recipe recipe = parseRecipe(contentString);
-                            AppDatabase db = DatabaseClient.getInstance(context).getAppDatabase();
-                            if (recipe != null) {
-                                db.recipeDao().insert(recipe);
-                                showToast(context, "Recipe converted successfully: " + recipe.name);
-                                Log.println(Log.INFO, "imageProcessor","Parsed Recipe: " + new Gson().toJson(recipe));
-                            } else {
-                                showToast(context, "Failed to parse recipe.");
-                            }
-                        } catch (JsonSyntaxException e) {
-                            Log.println(Log.ERROR, "imageProcessor","Error parsing content string into Recipe: " + e.getMessage());
-                        }
-                    } else {
-                        Log.println(Log.ERROR, "imageProcessor","Key 'message' not found in 'choice'.");
-                    }
-                } else {
-                    showToast(context, "No response from OpenAI API.");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                showToast(context, "Error parsing OpenAI API response.");
-            }
+        if ("recipe".equalsIgnoreCase(formatType)) {
+            handleRecipe(context, contentString);
+        } else if ("ingredients".equalsIgnoreCase(formatType)) {
+            handleIngredients(context, contentString);
         } else {
+            throw new IllegalArgumentException("Invalid format type: " + formatType);
+        }
+
+    }
+
+    private static void handleIngredients(Context context, String contentString) {
+        try {
+            // Parse the content string into a JSON object
+            JSONObject contentJson = new JSONObject(contentString);
+
+            // Extract the "ingredients" array from the JSON object
+            JSONArray ingredientsArray = contentJson.getJSONArray("ingredients");
+
+            // Create a list to hold the parsed ingredients
+            List<Ingridient> ingredients = new ArrayList<>();
+
+            // Loop through the JSON array and convert each object into an Ingridient
+            for (int i = 0; i < ingredientsArray.length(); i++) {
+                JSONObject ingredientJson = ingredientsArray.getJSONObject(i);
+                Ingridient ingredient = MetricCookingUnitConverter
+                        .parseIngredient(ingredientJson.getString("name")
+                                + " " + ingredientJson.getDouble("amount")
+                                + " " + ingredientJson.optString("unit", ""));
+
+                ingredient.estimatedExpirationDate = ingredientJson.optString("estimatedExpirationDate", null);
+                ingredient.Price = ingredientJson.optString("price", "");
+
+                ingredients.add(ingredient);
+            }
+
+            // Get the database instance
+            AppDatabase db = DatabaseClient.getInstance(context).getAppDatabase();
+
+            // Perform database operations on a background thread
+            new Thread(() -> {
+                Inventory inventory;
+
+                // Fetch the inventories synchronously
+                List<Inventory> inventories = db.inventoryDao().getAllInventoriesSync();
+
+                // Check if inventories exist
+                if (inventories == null || inventories.isEmpty()) {
+                    // Create a new default inventory if none exist
+                    inventory = new Inventory();
+                    inventory.name = "Default Inventory";
+                    inventory.ingridients = new ArrayList<>();
+                    db.inventoryDao().insert(inventory);
+
+                    // Fetch the newly created inventory
+                    inventories = db.inventoryDao().getAllInventoriesSync();
+                }
+
+                // Use the first inventory
+                inventory = inventories.get(0);
+
+                // Add the new ingredients to the inventory
+                if (inventory.ingridients == null) {
+                    inventory.ingridients = new ArrayList<>();
+                }
+                inventory.ingridients.addAll(ingredients);
+
+                // Update the inventory in the database
+                db.inventoryDao().update(inventory);
+
+                // Log the added ingredients
+                Log.println(Log.INFO, "imageProcessor", "Ingredients added: " + new Gson().toJson(ingredients));
+
+                // Show a success message on the main thread
+                new android.os.Handler(context.getMainLooper()).post(() ->
+                        Toast.makeText(context, "Ingredients added successfully!", Toast.LENGTH_SHORT).show());
+            }).start();
+
+        } catch (JSONException e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error parsing ingredients JSON: " + e.getMessage());
+            showToast(context, "Error parsing ingredients content.");
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Unexpected error while handling ingredients: " + e.getMessage());
+            showToast(context, "Unexpected error occurred.");
+        }
+    }
+    private static void handleRecipe(Context context, String contentString) {
+        try {
+            // Parse the content string into the Recipe class
+            Recipe recipe = parseRecipe(contentString);
+            if (recipe == null) {
+                showToast(context, "Failed to parse recipe.");
+                return;
+            }
+
+            AppDatabase db = DatabaseClient.getInstance(context).getAppDatabase();
+            db.recipeDao().insert(recipe);
+            showToast(context, "Recipe converted successfully: " + recipe.name);
+            Log.println(Log.INFO, "imageProcessor", "Parsed Recipe: " + new Gson().toJson(recipe));
+        } catch (JsonSyntaxException e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error parsing content string into Recipe: " + e.getMessage());
+            showToast(context, "Error parsing recipe content.");
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Unexpected error while saving recipe: " + e.getMessage());
+            showToast(context, "Unexpected error occurred.");
+        }
+    }
+
+    private static String extractContentString(Context context, Response response) {
+        if (!response.isSuccessful()) {
             showToast(context, "Failed to process image with OpenAI API.");
+            return null;
+        }
+
+        String responseData;
+        try {
+            responseData = response.body().string();
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error reading response body: " + e.getMessage());
+            showToast(context, "Error reading OpenAI API response.");
+            return null;
+        }
+
+        JSONObject jsonResponse;
+        try {
+            jsonResponse = new JSONObject(responseData);
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error parsing response JSON: " + e.getMessage());
+            showToast(context, "Error parsing OpenAI API response.");
+            return null;
+        }
+
+        JSONArray choices;
+        try {
+            choices = jsonResponse.getJSONArray("choices");
+            if (choices.length() == 0) {
+                showToast(context, "No response from OpenAI API.");
+                return null;
+            }
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error retrieving 'choices' from response: " + e.getMessage());
+            showToast(context, "Invalid response format from OpenAI API.");
+            return null;
+        }
+
+        JSONObject choice;
+        try {
+            choice = choices.getJSONObject(0);
+            if (!choice.has("message")) {
+                Log.println(Log.ERROR, "imageProcessor", "Key 'message' not found in 'choice'.");
+                showToast(context, "Invalid response format from OpenAI API.");
+                return null;
+            }
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error retrieving first choice: " + e.getMessage());
+            showToast(context, "Invalid response format from OpenAI API.");
+            return null;
+        }
+
+        JSONObject message;
+        try {
+            message = choice.getJSONObject("message");
+            return message.getString("content");
+        } catch (Exception e) {
+            Log.println(Log.ERROR, "imageProcessor", "Error retrieving 'content' from message: " + e.getMessage());
+            showToast(context, "Invalid response format from OpenAI API.");
+            return null;
         }
     }
 

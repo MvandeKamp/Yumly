@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -22,4 +21,11 @@
         android:name="com.mvandekamp.yumly.ui.inventory.InventoryFragment"
         android:label="Inventory"
         tools:layout="@layout/fragment_inventory" />
+
+    <!-- Add the new GroupFragment -->
+    <fragment
+        android:id="@+id/navigation_group"
+        android:name="com.mvandekamp.yumly.ui.group.GroupFragment"
+        android:label="Group"
+        tools:layout="@layout/fragment_group" />
 </navigation>

@@ -18,13 +18,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.Ingridient;
 import com.mvandekamp.yumly.models.Inventory;
-import com.mvandekamp.yumly.models.Recipe;
 import com.mvandekamp.yumly.models.data.AppDatabase;
 import com.mvandekamp.yumly.models.data.DatabaseClient;
 import com.mvandekamp.yumly.utils.ImageProcessor;
@@ -41,6 +41,7 @@ public class InventoryFragment extends Fragment {
     private Inventory inventory;
     private Button processImageButton;
     private Button addIngredientFab;
+    private InventoryViewModel inventoryViewModel;
 
     // Launchers for handling image capture and selection
     private final ActivityResultLauncher<Intent> captureImageLauncher = registerForActivityResult(
@@ -84,11 +85,13 @@ public class InventoryFragment extends Fragment {
         super(R.layout.fragment_inventory);
     }
 
-    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_inventory, container, false);
-        AppDatabase db = DatabaseClient.getInstance(getContext()).getAppDatabase();
+
+        AppDatabase database = DatabaseClient.getInstance(requireContext()).getAppDatabase();
+        InventoryViewModelFactory factory = new InventoryViewModelFactory(database);
+        inventoryViewModel = new ViewModelProvider(this, factory).get(InventoryViewModel.class);
 
         // Initialize RecyclerView
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -97,65 +100,54 @@ public class InventoryFragment extends Fragment {
         adapter = new InventoryAdapter(new ArrayList<>());
         recyclerView.setAdapter(adapter);
 
-
         Button clearInventoryButton = view.findViewById(R.id.clearInventoryButton);
-        clearInventoryButton.setOnClickListener(v -> clearInventory(db));
+        clearInventoryButton.setOnClickListener(v -> clearInventory());
 
-        new Thread(() -> {
-            List<Inventory> invs = db.inventoryDao().getAllInventories();
-
-            if (invs.isEmpty()) {
-                Inventory newInv = new Inventory();
-                newInv.name = "Default Inventory";
-                newInv.ingridients = new ArrayList<Ingridient>();
-                newInv.ingridients.add(new Ingridient("Milk", 2.0, MetricCookingUnitConverter.MetricUnit.LITERS, "2025-01-10", "10€"));
-                newInv.ingridients.add(new Ingridient("Eggs", 12.0, MetricCookingUnitConverter.MetricUnit.UNIT, "2025-01-15", "5€"));
-                newInv.ingridients.add(new Ingridient("Bread", 1.0, MetricCookingUnitConverter.MetricUnit.UNIT, "2025-01-08", "1€"));
-
-                // Sample data
-                db.inventoryDao().insert(newInv);
-                this.inventory = db.inventoryDao().getInventoryById(0);
-            } else {
-                this.inventory = invs.get(0);
-            }
-
-            requireActivity().runOnUiThread(() -> {
+        // Observe the list of inventories
+        inventoryViewModel.getInventories().observe(getViewLifecycleOwner(), inventories -> {
+            if (inventories != null && !inventories.isEmpty()) {
+                // Use the first inventory
+                this.inventory = inventories.get(0);
                 adapter.updateIngredients(inventory.ingridients);
-            });
-        }).start();
-
+            } else {
+                // If no inventories exist, create a default one
+                createDefaultInventory();
+            }
+        });
 
         // Set click listener for ingredients
-        adapter.setOnIngredientClickListener((ingredient, position) -> showEditIngredientDialog(ingredient, position, db));
+        adapter.setOnIngredientClickListener((ingredient, position) -> showEditIngredientDialog(ingredient, position));
 
         // Initialize buttons
         processImageButton = view.findViewById(R.id.processImageButton);
         processImageButton.setOnClickListener(v -> showImageOptions());
 
         addIngredientFab = view.findViewById(R.id.addIngredientFab);
-        addIngredientFab.setOnClickListener(v -> showAddIngredientDialog(db));
+        addIngredientFab.setOnClickListener(v -> showAddIngredientDialog());
 
         return view;
     }
 
-    private void clearInventory(AppDatabase db) {
-        new Thread(() -> {
-            // Clear the ingredients list
-            inventory.ingridients.clear();
+    private void createDefaultInventory() {
+        Inventory defaultInventory = new Inventory();
+        defaultInventory.name = "Default Inventory";
+        defaultInventory.ingridients = new ArrayList<>();
+        defaultInventory.ingridients.add(new Ingridient("Milk", 2.0, MetricCookingUnitConverter.MetricUnit.LITERS, "2025-01-10", "10€"));
+        defaultInventory.ingridients.add(new Ingridient("Eggs", 12.0, MetricCookingUnitConverter.MetricUnit.UNIT, "2025-01-15", "5€"));
+        defaultInventory.ingridients.add(new Ingridient("Bread", 1.0, MetricCookingUnitConverter.MetricUnit.UNIT, "2025-01-08", "1€"));
 
-            // Update the database
-            db.inventoryDao().update(inventory);
-
-            // Update the UI on the main thread
-            requireActivity().runOnUiThread(() -> {
-                adapter.updateIngredients(inventory.ingridients);
-                adapter.notifyDataSetChanged();
-                Toast.makeText(getContext(), "Inventory cleared!", Toast.LENGTH_SHORT).show();
-            });
-        }).start();
+        inventoryViewModel.insertInventory(defaultInventory);
     }
 
-    private void showEditIngredientDialog(Ingridient ingredient, int position, AppDatabase db) {
+    private void clearInventory() {
+        if (inventory != null) {
+            inventory.ingridients.clear();
+            inventoryViewModel.updateInventory(inventory);
+            Toast.makeText(getContext(), "Inventory cleared!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showEditIngredientDialog(Ingridient ingredient, int position) {
         // Inflate the dialog layout
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.editor_ingredient, null);
 
@@ -183,19 +175,14 @@ public class InventoryFragment extends Fragment {
                     ingredient.estimatedExpirationDate = ingredientExpirationEditText.getText().toString();
                     ingredient.Price = ingredientPriceEditText.getText().toString();
 
-                    // Update the RecyclerView and database
-                    adapter.notifyItemChanged(position);
-                    new Thread(() -> {
-                        inventory.ingridients.set(position, ingredient);
-                        requireActivity().runOnUiThread(() -> {
-                            adapter.updateIngredients(inventory.ingridients);
-                        });
-                        db.inventoryDao().update(inventory);
-                    }).start();
+                    // Update the inventory and database
+                    inventory.ingridients.set(position, ingredient);
+                    inventoryViewModel.updateInventory(inventory);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
     private void showImageOptions() {
         // Show options to take a picture or choose from storage
         String[] options = {"Take Picture", "Choose from Gallery"};
@@ -217,7 +204,7 @@ public class InventoryFragment extends Fragment {
                 .show();
     }
 
-    private void showAddIngredientDialog(AppDatabase db) {
+    private void showAddIngredientDialog() {
         // Inflate the dialog layout
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.editor_ingredient, null);
 
@@ -236,16 +223,9 @@ public class InventoryFragment extends Fragment {
                         // Parse the input using MetricCookingUnitConverter
                         Ingridient newIngredient = MetricCookingUnitConverter.parseIngredient(input);
 
-                        // Add the ingredient to the list and update the RecyclerView
-                        adapter.notifyItemInserted(adapter.getItemCount());
-                        new Thread(() -> {
-                            // Save to database
-                            inventory.ingridients.add(newIngredient);
-                            requireActivity().runOnUiThread(() -> {
-                                adapter.updateIngredients(inventory.ingridients);
-                            });
-                            db.inventoryDao().update(inventory);
-                        }).start();
+                        // Add the ingredient to the inventory
+                        inventory.ingridients.add(newIngredient);
+                        inventoryViewModel.updateInventory(inventory);
                     } catch (IllegalArgumentException e) {
                         // Handle invalid input format
                         Toast.makeText(getContext(), "Invalid input format. Please try again.", Toast.LENGTH_SHORT).show();
@@ -254,11 +234,4 @@ public class InventoryFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
-    public void updateUIWithNewIngredients(List<Ingridient> newIngredients) {
-        inventory.ingridients = newIngredients;
-        adapter.updateIngredients(newIngredients);
-        adapter.notifyDataSetChanged();
-    }
-
 }

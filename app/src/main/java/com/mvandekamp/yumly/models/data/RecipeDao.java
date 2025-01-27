@@ -1,5 +1,6 @@
 package com.mvandekamp.yumly.models.data;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -25,5 +26,5 @@ public interface RecipeDao {
     Recipe getRecipeById(int id);
 
     @Query("SELECT * FROM Recipe")
-    List<Recipe> getAllRecipes();
+    LiveData<List<Recipe>> getAllRecipes();
 }
