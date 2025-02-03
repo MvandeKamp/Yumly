@@ -53,7 +53,7 @@ public class InventoryFragment extends Fragment {
                         ImageProcessor.sendImageToOpenAI(
                                 getContext(),
                                 imageBitmap,
-                                "Extract the ingredients information from the provided image to the provided output format. Only Food and Edibles!!!! Extract the ingredients to Metric units if price, date, amount (amount is often in the name metric or imperial like 1kg or 1lb) is not Available leave it empty. Available units: ml, l, kg, g, tbsp, tsp and default if none eligible 'unit'",
+                                "Extract the ingredients information from the provided image to the provided output format. Only Food and Edibles!!!! Extract the ingredients to Metric units if price, date, amount (amount is often in the name, metric or imperial like 1kg or 1lb so use that as the amount) is not Available leave it empty. Available units: ml, l, kg, g, tbsp, tsp and default if none eligible 'unit'",
                                 "ingredients"
                         );
                     }
@@ -116,7 +116,7 @@ public class InventoryFragment extends Fragment {
         });
 
         // Set click listener for ingredients
-        adapter.setOnIngredientClickListener((ingredient, position) -> showEditIngredientDialog(ingredient, position));
+        adapter.setOnIngredientClickListener(this::showEditIngredientDialog);
 
         // Initialize buttons
         processImageButton = view.findViewById(R.id.processImageButton);

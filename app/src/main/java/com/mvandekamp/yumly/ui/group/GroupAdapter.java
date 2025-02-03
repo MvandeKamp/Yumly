@@ -9,15 +9,22 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.mvandekamp.yumly.R;
+import com.mvandekamp.yumly.models.CookingGroup;
 
 import java.util.List;
 
 public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHolder> {
 
-    private final List<String> groupList;
+    private final List<CookingGroup> groupList;
+    private final OnGroupClickListener onGroupClickListener;
 
-    public GroupAdapter(List<String> groupList) {
+    public interface OnGroupClickListener {
+        void onGroupClick(int groupId);
+    }
+
+    public GroupAdapter(List<CookingGroup> groupList, OnGroupClickListener onGroupClickListener) {
         this.groupList = groupList;
+        this.onGroupClickListener = onGroupClickListener;
     }
 
     @NonNull
@@ -29,8 +36,11 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
 
     @Override
     public void onBindViewHolder(@NonNull GroupViewHolder holder, int position) {
-        String groupName = groupList.get(position);
-        holder.groupNameTextView.setText(groupName);
+        CookingGroup group = groupList.get(position);
+        holder.groupNameTextView.setText(group.name);
+
+        // Set click listener to pass the group ID
+        holder.itemView.setOnClickListener(v -> onGroupClickListener.onGroupClick(group.id));
     }
 
     @Override
