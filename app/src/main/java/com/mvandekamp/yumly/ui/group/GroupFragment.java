@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,11 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.CookingGroup;
-import com.mvandekamp.yumly.models.data.CookingGroupDao;
 import com.mvandekamp.yumly.models.data.AppDatabase;
+import com.mvandekamp.yumly.models.data.CookingGroupDao;
 import com.mvandekamp.yumly.models.data.DatabaseClient;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class GroupFragment extends Fragment {
@@ -27,8 +27,9 @@ public class GroupFragment extends Fragment {
     private CookingGroupDao cookingGroupDao;
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        // Inflate the layout that contains the RecyclerView and other UI elements
         return inflater.inflate(R.layout.fragment_group, container, false);
     }
 
@@ -36,8 +37,17 @@ public class GroupFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Find and configure the RecyclerView
         groupRecyclerView = view.findViewById(R.id.groupRecyclerView);
         groupRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        // Initialize the adapter with a click listener for editing an existing group
+        adapter = new GroupAdapter(groupId -> {
+            // Show the dialog for editing the selected group
+            GroupSelectedDialogFragment dialogFragment = GroupSelectedDialogFragment.newInstance(groupId);
+            dialogFragment.show(getParentFragmentManager(), "GroupSelectedDialog");
+        });
+        groupRecyclerView.setAdapter(adapter);
 
         // Initialize the database and DAO
         AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
@@ -45,31 +55,23 @@ public class GroupFragment extends Fragment {
 
         // Load groups from the database
         loadGroupsFromDatabase();
+
+        // Setup the button for creating a new group
+        Button createGroupButton = view.findViewById(R.id.processImageButton);
+        createGroupButton.setOnClickListener(v -> {
+            // Show the dialog for creating a new group (no groupId passed)
+            GroupSelectedDialogFragment dialogFragment = GroupSelectedDialogFragment.newInstance(-1);
+            dialogFragment.show(getParentFragmentManager(), "GroupSelectedDialog");
+        });
     }
 
-    private void loadGroupsFromDatabase() {
+    public void loadGroupsFromDatabase() {
         new Thread(() -> {
             // Query all groups from the database
             List<CookingGroup> groups = cookingGroupDao.getAllGroups();
 
-            // Update the RecyclerView on the main thread
-            requireActivity().runOnUiThread(() -> {
-                adapter = new GroupAdapter(groups, groupId -> {
-                    // Navigate to GroupSelectedFragment when a group is clicked
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("groupId", groupId);
-
-                    GroupSelectedFragment fragment = new GroupSelectedFragment();
-                    fragment.setArguments(bundle);
-
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.groupRecyclerView, fragment) // Replace with your container ID
-                            .addToBackStack(null)
-                            .commit();
-                });
-                groupRecyclerView.setAdapter(adapter);
-            });
+            // Update the adapter on the main thread
+            requireActivity().runOnUiThread(() -> adapter.updateData(groups));
         }).start();
     }
 }

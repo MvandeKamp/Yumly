@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.CookingGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHolder> {
@@ -22,9 +23,15 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
         void onGroupClick(int groupId);
     }
 
-    public GroupAdapter(List<CookingGroup> groupList, OnGroupClickListener onGroupClickListener) {
-        this.groupList = groupList;
+    public GroupAdapter(OnGroupClickListener onGroupClickListener) {
+        this.groupList = new ArrayList<>(); // Initialize with an empty list
         this.onGroupClickListener = onGroupClickListener;
+    }
+
+    public void updateData(List<CookingGroup> newGroupList) {
+        groupList.clear(); // Clear the old data
+        groupList.addAll(newGroupList); // Add the new data
+        notifyDataSetChanged(); // Notify the adapter that the data has changed
     }
 
     @NonNull

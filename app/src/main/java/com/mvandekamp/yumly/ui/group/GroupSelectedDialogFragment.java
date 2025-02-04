@@ -9,9 +9,10 @@ import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import android.view.ViewGroup.LayoutParams;
 
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.CookingGroup;
@@ -25,7 +26,7 @@ import com.mvandekamp.yumly.models.data.RecipeDao;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GroupSelectedFragment extends Fragment {
+public class GroupSelectedDialogFragment extends DialogFragment {
 
     private EditText groupNameInput;
     private EditText groupDescriptionInput;
@@ -37,10 +38,29 @@ public class GroupSelectedFragment extends Fragment {
     private CookingGroup currentGroup;
     private GroupSelectedRecipesAdapter adapter;
 
+    public static GroupSelectedDialogFragment newInstance(int groupId) {
+        GroupSelectedDialogFragment fragment = new GroupSelectedDialogFragment();
+        Bundle args = new Bundle();
+        args.putInt("groupId", groupId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.editor_group, container, false);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Set the dialog to take up the full screen
+        if (getDialog() != null && getDialog().getWindow() != null) {
+            getDialog().getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+            getDialog().getWindow().setBackgroundDrawableResource(R.color.dialog_background);
+        }
     }
 
     @Override
@@ -51,7 +71,7 @@ public class GroupSelectedFragment extends Fragment {
         groupNameInput = view.findViewById(R.id.groupNameEditText);
         groupDescriptionInput = view.findViewById(R.id.groupDescriptionEditText);
         saveButton = view.findViewById(R.id.saveGroupButton);
-        recipeRecyclerView = view.findViewById(R.id.recipeRecyclerView);
+        recipeRecyclerView = view.findViewById(R.id.groupRecipeRecyclerView);
 
         // Initialize the database and DAO
         AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
@@ -64,8 +84,13 @@ public class GroupSelectedFragment extends Fragment {
         // Retrieve group ID from arguments
         int groupId = getArguments() != null ? getArguments().getInt("groupId") : -1;
 
-        // Load group details from the database
-        if (groupId != -1) {
+        if (groupId == -1) {
+            // New group creation
+            currentGroup = new CookingGroup();
+            adapter = new GroupSelectedRecipesAdapter(requireContext(), new ArrayList<RecipeState>());
+            recipeRecyclerView.setAdapter(adapter);
+        } else {
+            // Load existing group details
             new Thread(() -> {
                 currentGroup = cookingGroupDao.getGroupById(groupId);
                 if (currentGroup != null) {
@@ -85,21 +110,36 @@ public class GroupSelectedFragment extends Fragment {
 
         // Save button click listener
         saveButton.setOnClickListener(v -> {
-            if (currentGroup != null) {
-                currentGroup.name = groupNameInput.getText().toString();
-                currentGroup.description = groupDescriptionInput.getText().toString();
+            String groupName = groupNameInput.getText().toString();
+            String groupDescription = groupDescriptionInput.getText().toString();
 
-                new Thread(() -> cookingGroupDao.update(currentGroup)).start();
+            if (groupName.isEmpty()) {
+                groupNameInput.setError("Group name is required");
+                return;
             }
+
+            currentGroup.name = groupName;
+            currentGroup.description = groupDescription;
+
+            new Thread(() -> {
+                if (groupId == -1) {
+                    // Insert new group into the database
+                    cookingGroupDao.insert(currentGroup);
+                } else {
+                    // Update existing group
+                    cookingGroupDao.update(currentGroup);
+                }
+
+                // Dismiss the dialog and refresh the parent fragment
+                requireActivity().runOnUiThread(() -> {
+                    dismiss();
+                    if (getParentFragment() instanceof GroupFragment) {
+                        // Refresh the parent fragment (if needed)
+                        // ((GroupFragment) getParentFragment()).loadGroupsFromDatabase();
+                    }
+                });
+            }).start();
         });
-
-        // Change Recipes button click listener
-        Button changeRecipesButton = view.findViewById(R.id.changeSelectedRecipes);
-        changeRecipesButton.setOnClickListener(v -> openChangeRecipesDialog());
-
-        // Generate List button click listener
-        Button generateListButton = view.findViewById(R.id.generateShoppingList);
-        generateListButton.setOnClickListener(v -> generateAndDisplayShoppingList());
     }
 
     private void generateAndDisplayShoppingList() {

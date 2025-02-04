@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.mvandekamp.yumly.R;
 import com.mvandekamp.yumly.models.RecipeState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GroupSelectedRecipesAdapter extends RecyclerView.Adapter<GroupSelectedRecipesAdapter.RecipeViewHolder> {
@@ -23,7 +24,7 @@ public class GroupSelectedRecipesAdapter extends RecyclerView.Adapter<GroupSelec
     // Constructor
     public GroupSelectedRecipesAdapter(Context context, List<RecipeState> recipeStates) {
         this.context = context;
-        this.recipeStates = recipeStates;
+        this.recipeStates = recipeStates != null ? recipeStates : new ArrayList<>();
     }
 
     @NonNull
@@ -39,15 +40,30 @@ public class GroupSelectedRecipesAdapter extends RecyclerView.Adapter<GroupSelec
         // Get the current RecipeState
         RecipeState recipeState = recipeStates.get(position);
 
+        // Safeguard against null RecipeState or Recipe
+        if (recipeState == null || recipeState.recipe == null) {
+            holder.recipeNameTextView.setText("Unknown Recipe");
+            holder.recipeDescriptionTextView.setText("");
+            return;
+        }
+
         // Bind the data to the views
         holder.recipeNameTextView.setText(recipeState.recipe.name);
         holder.recipeDescriptionTextView.setText(recipeState.recipe.description);
+    }
 
+    // Add this method to update the list
+    public void updateData(List<RecipeState> newRecipeStates) {
+        recipeStates.clear();
+        if (newRecipeStates != null) {
+            recipeStates.addAll(newRecipeStates);
+        }
+        notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return recipeStates.size();
+        return recipeStates != null ? recipeStates.size() : 0;
     }
 
     // ViewHolder class
