@@ -72,6 +72,8 @@ public class GroupSelectedDialogFragment extends DialogFragment {
         groupDescriptionInput = view.findViewById(R.id.groupDescriptionEditText);
         saveButton = view.findViewById(R.id.saveGroupButton);
         recipeRecyclerView = view.findViewById(R.id.groupRecipeRecyclerView);
+        Button changeRecipesButton = view.findViewById(R.id.changeSelectedRecipes);
+        Button generateListButton = view.findViewById(R.id.generateShoppingList);
 
         // Initialize the database and DAO
         AppDatabase db = DatabaseClient.getInstance(requireContext()).getAppDatabase();
@@ -140,6 +142,12 @@ public class GroupSelectedDialogFragment extends DialogFragment {
                 });
             }).start();
         });
+
+        // Change Recipes button click listener
+        changeRecipesButton.setOnClickListener(v -> openChangeRecipesDialog());
+
+        // Generate Shopping List button click listener
+        generateListButton.setOnClickListener(v -> generateAndDisplayShoppingList());
     }
 
     private void generateAndDisplayShoppingList() {
@@ -184,7 +192,7 @@ public class GroupSelectedDialogFragment extends DialogFragment {
     private void openChangeRecipesDialog() {
         new Thread(() -> {
             // Fetch all recipes from the database
-            List<Recipe> allRecipes = recipeDao.getAllRecipes().getValue();
+            List<Recipe> allRecipes = recipeDao.getAllRecipesSync();
 
             requireActivity().runOnUiThread(() -> {
                 // Create a dialog
@@ -216,9 +224,13 @@ public class GroupSelectedDialogFragment extends DialogFragment {
                     // Update the group's selected recipes
                     currentGroup.selectedRecipes = selectedRecipeStates;
 
+                    // Update the adapter's data and notify it
+                    adapter.updateData(currentGroup.selectedRecipes);
+
                     // Refresh the main RecyclerView
                     adapter.notifyDataSetChanged();
                 });
+
 
                 builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
